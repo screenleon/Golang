@@ -8,12 +8,12 @@ import (
 
 func TestWriteHeader(t *testing.T) {
 	w := httptest.NewRecorder()
-	responseWriter := &ResponseWriter{
+	wrapResponseWriter := &ResponseWriter{
 		ResponseWriter: w,
 		StatusCode:     400,
 	}
-	responseWriter.WriteHeader(http.StatusOK)
-	if status := responseWriter.StatusCode; status != http.StatusOK {
+	wrapResponseWriter.WriteHeader(http.StatusOK)
+	if status := wrapResponseWriter.StatusCode; status != http.StatusOK {
 		t.Errorf("Wrong status")
 	}
 }
