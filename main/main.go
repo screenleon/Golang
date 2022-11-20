@@ -4,27 +4,40 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"server/controllers"
+	serverHttp "server/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "80"
+	err := godotenv.Load("app.env")
+	if err != nil {
+		log.Println("Error loading .env file")
 	}
 
-	router := httprouter.New()
-	router.GET("/health", controllers.Health)
+	tlsCertificate := os.Getenv("TLS_CERT")
+	tlsKey := os.Getenv("TLS_KEY")
+	port := os.Getenv("PORT")
 
-	log.Println("listen on", port)
-	log.Fatal(http.ListenAndServe(":"+port, logRequest(router)))
-}
+	useTls := false
+	if tlsCertificate != "" && tlsKey != "" {
+		useTls = true
+	}
 
-func logRequest(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s\n", r.Method, r.URL)
-		handler.ServeHTTP(w, r)
-	})
+	if port == "" {
+		if useTls {
+			port = "443"
+		} else {
+			port = "80"
+		}
+	}
+
+	router := serverHttp.Router()
+
+	log.Println("listen on", port, "port")
+	if useTls {
+		log.Fatal(http.ListenAndServeTLS(":"+port, tlsCertificate, tlsKey, serverHttp.LogRequest(router)))
+	} else {
+		log.Fatal(http.ListenAndServe(":"+port, serverHttp.LogRequest(router)))
+	}
 }
